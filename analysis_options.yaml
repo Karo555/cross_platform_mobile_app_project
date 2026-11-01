@@ -14,6 +14,11 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+  language:
+    # Firestore returns Map<String, dynamic>. These force explicit casts and
+    # type arguments, so a wrong field type is caught when the code is written.
+    strict-casts: true
+    strict-raw-types: true
 
 linter:
   # The lint rules applied to this project can be customized in the
@@ -27,8 +32,18 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # Extra rules on top of flutter_lints (agreed in #3).
+    # A Firestore write that is not awaited could report success before the
+    # backend confirms it.
+    unawaited_futures: true
+    # Firestore listeners that are never cancelled keep running and leak.
+    cancel_subscriptions: true
+    always_declare_return_types: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_final_locals: true
+    prefer_single_quotes: true
+    directives_ordering: true
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
