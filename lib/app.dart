@@ -25,7 +25,7 @@ class PatientTrackerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
       title: 'Patient Tracker',
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.teal)),
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal)),
       routerConfig: ref.watch(routerProvider),
     );
   }
