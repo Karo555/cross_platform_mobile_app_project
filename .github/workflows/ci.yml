@@ -14,6 +14,8 @@ jobs:
         with:
           channel: stable
           cache: true
+      # firebase_options.dart is gitignored (#4); use the fake placeholder.
+      - run: cp -n lib/firebase_options.example.dart lib/firebase_options.dart
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
