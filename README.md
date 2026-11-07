@@ -49,3 +49,43 @@ flutter run            # run on a connected device or emulator
 ```
 
 The lint rules in `analysis_options.yaml` are stricter than the Flutter defaults, for example `unawaited_futures` and `strict-casts`. The project-specific ones have a comment saying why. Even "info" findings fail `flutter analyze`, so run it before every push.
+
+## Firebase setup (#4)
+
+Firebase project: `patient-tracker-cpma` (Spark plan). During development the app talks to the **local Firebase Emulator Suite**, never to real data.
+
+### One-time install
+1. [Node.js](https://nodejs.org) (LTS), then `npm install -g firebase-tools`
+2. Java JDK 21 (the Firestore emulator needs it): `java -version` must work
+3. `firebase login` (ask Akash to add you to the project)
+4. FlutterFire CLI: `dart pub global activate flutterfire_cli`
+5. `cd functions` then `npm install`
+
+On Windows, if PowerShell says running scripts is disabled, use `firebase.cmd` instead of `firebase`.
+
+### Generate the config files (not committed)
+`lib/firebase_options.dart`, `android/app/google-services.json` and `ios/Runner/GoogleService-Info.plist` are gitignored. Generate them once:
+
+```bash
+flutterfire configure --project=patient-tracker-cpma --platforms=android,ios --android-package-name=com.cpma.patient_tracker --ios-bundle-id=com.cpma.patientTracker --yes
+```
+
+The iOS plist is only written on a Mac. CI uses the fake `lib/firebase_options.example.dart` instead (see `.github/workflows/ci.yml`).
+
+### Run the emulators
+```bash
+firebase emulators:start
+```
+Auth `9099`, Firestore `8080`, Functions `5001`, Emulator UI at http://localhost:4000. Rules come from `firestore.rules`.
+
+### Point the app at the emulators
+Debug builds use the emulators automatically (`lib/data/firebase/firebase_setup.dart`). Tell the app where your PC is:
+
+| Device | Command |
+|---|---|
+| Android emulator | `flutter run` (default host `10.0.2.2`) |
+| Android phone over USB | `adb reverse tcp:9099 tcp:9099` and `adb reverse tcp:8080 tcp:8080`, then `flutter run --dart-define=EMULATOR_HOST=localhost` |
+| Phone over Wi-Fi | `flutter run --dart-define=EMULATOR_HOST=<your PC's IP>` (firewall must allow ports 8080/9099) |
+| iOS simulator | `flutter run --dart-define=EMULATOR_HOST=localhost` |
+
+Add `--dart-define=USE_EMULATOR=false` to use the real Firebase project from a debug build.

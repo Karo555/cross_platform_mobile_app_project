@@ -1,0 +1,16 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions for the patient tracker. Empty until a backend issue needs one.",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  }
+}
