@@ -42,6 +42,14 @@
             "ios": "1:545170420543:ios:29fbc8dee7abe6d291998a"
           }
         }
+      },
+      "ios": {
+        "default": {
+          "projectId": "patient-tracker-cpma",
+          "appId": "1:545170420543:ios:29fbc8dee7abe6d291998a",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
       }
     }
   }
