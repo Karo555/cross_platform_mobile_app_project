@@ -1,4 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- #6: read NFC wristbands (NTAG213) and scan QR codes with the camera. -->
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- required="false": phones without NFC or a camera can still install
+         the app. The app checks at runtime and falls back to QR (or NFC). -->
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application
         android:label="patient_tracker"
         android:name="${applicationName}"
