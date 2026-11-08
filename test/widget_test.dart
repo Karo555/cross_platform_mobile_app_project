@@ -20,11 +20,8 @@ Future<void> _pumpApp(WidgetTester tester, FakeAuthRepository auth) async {
 }
 
 void main() {
-  testWidgets('App without Firebase starts on the login screen', (
-    tester,
-  ) async {
-    await tester.pumpWidget(const ProviderScope(child: PatientTrackerApp()));
-    await tester.pumpAndSettle();
+  testWidgets('A signed-out user starts on the login screen', (tester) async {
+    await _pumpApp(tester, FakeAuthRepository());
 
     expect(find.byType(LoginScreen), findsOneWidget);
   });

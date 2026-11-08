@@ -1,7 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_user.dart';
-import 'unconfigured_auth_repository.dart';
+import 'firebase_auth_repository.dart';
 
 /// Why a sign-in failed.
 enum AuthError {
@@ -11,7 +12,6 @@ enum AuthError {
   userDisabled,
   tooManyRequests,
   network,
-  notConfigured,
   unknown,
 }
 
@@ -38,10 +38,10 @@ abstract interface class AuthRepository {
   Future<void> signOut();
 }
 
-/// Replace [UnconfiguredAuthRepository] with the Firebase implementation once
-/// the Firebase project is set up (#4). Tests override this provider.
+/// Firebase Authentication. Needs `initFirebase()` to have run, which `main`
+/// does before `runApp`. Tests override this provider with a fake.
 final authRepositoryProvider = Provider<AuthRepository>(
-  (ref) => const UnconfiguredAuthRepository(),
+  (ref) => FirebaseAuthRepository(FirebaseAuth.instance),
 );
 
 /// The signed-in user and their role, for any screen that needs them.

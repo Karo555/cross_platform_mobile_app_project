@@ -170,6 +170,5 @@ String _messageFor(AuthError error) => switch (error) {
     'This account has been disabled. Contact your administrator.',
   AuthError.tooManyRequests => 'Too many attempts. Try again later.',
   AuthError.network => 'No connection. Check your network and try again.',
-  AuthError.notConfigured => 'Sign-in is not available yet.',
   AuthError.unknown => 'Could not sign in. Try again.',
 };
