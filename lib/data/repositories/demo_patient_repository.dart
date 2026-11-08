@@ -24,6 +24,11 @@ class DemoPatientRepository implements PatientRepository {
   Stream<List<Patient>> watchPatients() => Stream.value(_patients());
 
   @override
+  Stream<Patient?> watchPatient(String patientId) => Stream.value(
+    _patients().where((p) => p.patientId == patientId).firstOrNull,
+  );
+
+  @override
   Stream<List<Location>> watchLocations() => Stream.value(_locations);
 
   List<Patient> _patients() {

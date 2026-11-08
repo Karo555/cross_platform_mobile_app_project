@@ -10,6 +10,10 @@ abstract interface class PatientRepository {
   /// after every change, so no screen needs a manual refresh.
   Stream<List<Patient>> watchPatients();
 
+  /// One patient. Emits on listen and after every change, and emits null if
+  /// no patient has this ID.
+  Stream<Patient?> watchPatient(String patientId);
+
   /// The places a patient can be in. Read-only for the app.
   Stream<List<Location>> watchLocations();
 }
