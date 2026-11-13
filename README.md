@@ -50,6 +50,17 @@ flutter run            # run on a connected device or emulator
 
 The lint rules in `analysis_options.yaml` are stricter than the Flutter defaults, for example `unawaited_futures` and `strict-casts`. The project-specific ones have a comment saying why. Even "info" findings fail `flutter analyze`, so run it before every push.
 
+### End-to-end tests
+
+`integration_test/` runs the real app against the Auth emulator on a simulator or phone. It creates its own test accounts. CI does not run it, because it needs a device.
+
+```bash
+firebase emulators:start --only auth
+flutter test integration_test --dart-define=EMULATOR_HOST=localhost
+```
+
+Use the same `EMULATOR_HOST` as for `flutter run` (see the table under "Point the app at the emulators").
+
 ## Firebase setup (#4)
 
 Firebase project: `patient-tracker-cpma` (Spark plan). During development the app talks to the **local Firebase Emulator Suite**, never to real data.
