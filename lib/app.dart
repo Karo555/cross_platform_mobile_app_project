@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/theme.dart';
 import 'core/widgets/state_views.dart';
 import 'data/models/app_user.dart';
 import 'data/repositories/auth_repository.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/no_access_screen.dart';
+import 'features/patients/screens/patient_details_screen.dart';
+import 'features/patients/screens/patient_list_screen.dart';
 
 const _homeRoute = '/';
 const _loadingRoute = '/loading';
@@ -59,7 +62,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: _homeRoute,
-        builder: (context, state) => const _PlaceholderHomeScreen(),
+        builder: (context, state) => const PatientListScreen(),
+      ),
+      GoRoute(
+        path: '/patients/:patientId',
+        builder: (context, state) =>
+            PatientDetailsScreen(patientId: state.pathParameters['patientId']!),
       ),
       GoRoute(
         path: _loadingRoute,
@@ -87,33 +95,9 @@ class PatientTrackerApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Patient Tracker',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-      ),
+      theme: buildAppTheme(Brightness.light),
+      darkTheme: buildAppTheme(Brightness.dark),
       routerConfig: ref.watch(routerProvider),
-    );
-  }
-}
-
-/// Temporary start screen until the patient list is added (#26).
-class _PlaceholderHomeScreen extends ConsumerWidget {
-  const _PlaceholderHomeScreen();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authStateProvider).value;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Patient Tracker'),
-        actions: [
-          IconButton(
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authRepositoryProvider).signOut(),
-          ),
-        ],
-      ),
-      body: Center(child: Text('${user?.email} (${user?.role?.label})')),
     );
   }
 }

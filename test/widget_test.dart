@@ -6,6 +6,7 @@ import 'package:patient_tracker/data/models/app_user.dart';
 import 'package:patient_tracker/data/repositories/auth_repository.dart';
 import 'package:patient_tracker/features/auth/screens/login_screen.dart';
 import 'package:patient_tracker/features/auth/screens/no_access_screen.dart';
+import 'package:patient_tracker/features/patients/screens/patient_list_screen.dart';
 
 import 'support/fake_auth_repository.dart';
 
@@ -33,7 +34,7 @@ void main() {
     await _pumpApp(tester, FakeAuthRepository(user: nurse));
 
     expect(find.byType(LoginScreen), findsNothing);
-    expect(find.text('nurse@example.com (Nurse)'), findsOneWidget);
+    expect(find.byType(PatientListScreen), findsOneWidget);
   });
 
   testWidgets('Signing in and out moves between login and home', (
@@ -46,7 +47,7 @@ void main() {
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();
 
-    expect(find.text('nurse@example.com (Nurse)'), findsOneWidget);
+    expect(find.byType(PatientListScreen), findsOneWidget);
 
     await tester.tap(find.byTooltip('Sign out'));
     await tester.pumpAndSettle();
@@ -100,7 +101,7 @@ void main() {
       await tester.pump(afterRetries);
       await tester.pumpAndSettle();
 
-      expect(find.text('nurse@example.com (Nurse)'), findsOneWidget);
+      expect(find.byType(PatientListScreen), findsOneWidget);
     });
 
     testWidgets('a retry does not restore a session that has ended', (
