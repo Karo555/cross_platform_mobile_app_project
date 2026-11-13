@@ -66,6 +66,11 @@ class FakePatientRepository implements PatientRepository {
   }
 
   @override
+  Stream<Patient?> watchPatient(String patientId) => watchPatients().map(
+    (list) => list.where((p) => p.patientId == patientId).firstOrNull,
+  );
+
+  @override
   Stream<List<Location>> watchLocations() async* {
     await gate?.future;
     yield locations;
