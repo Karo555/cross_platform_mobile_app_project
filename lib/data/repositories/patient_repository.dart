@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/history_entry.dart';
 import '../models/location.dart';
 import '../models/patient.dart';
+import 'auth_repository.dart';
 import 'demo_patient_repository.dart';
 
 /// Reads patients and locations. Screens use this instead of `cloud_firestore`.
@@ -16,6 +18,10 @@ abstract interface class PatientRepository {
 
   /// The places a patient can be in. Read-only for the app.
   Stream<List<Location>> watchLocations();
+
+  /// One patient's transfers, newest first (#24). Emits on listen and again
+  /// after every new transfer. Empty if the patient was never transferred.
+  Stream<List<HistoryEntry>> watchHistory(String patientId);
 
   /// Sets the patient's status (doctors only, #19). Changes `status`,
   /// `lastUpdated` and `version`; the location and `locationUpdatedAt` stay
@@ -59,7 +65,11 @@ class TransferConflict implements Exception {
 /// Replace [DemoPatientRepository] with the Firestore implementation once it
 /// exists. Tests override this provider.
 final patientRepositoryProvider = Provider<PatientRepository>(
-  (ref) => DemoPatientRepository(),
+  (ref) => DemoPatientRepository(
+    // Who made a transfer, for the history. Firestore takes it from the
+    // signed-in user's token instead.
+    currentUser: () => ref.read(authStateProvider).value,
+  ),
 );
 
 /// All locations, for any screen that shows a location name or lets the user

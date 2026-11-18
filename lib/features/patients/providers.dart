@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/models/history_entry.dart';
 import '../../data/models/patient.dart';
 import '../../data/repositories/patient_repository.dart';
 
@@ -14,3 +15,11 @@ final patientProvider = StreamProvider.autoDispose.family<Patient?, String>(
   (ref, patientId) =>
       ref.watch(patientRepositoryProvider).watchPatient(patientId),
 );
+
+/// One patient's transfers, newest first. Updates by itself after every new
+/// transfer. Stops listening when no screen shows the history any more.
+final historyProvider = StreamProvider.autoDispose
+    .family<List<HistoryEntry>, String>(
+      (ref, patientId) =>
+          ref.watch(patientRepositoryProvider).watchHistory(patientId),
+    );

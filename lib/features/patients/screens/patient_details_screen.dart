@@ -148,6 +148,17 @@ class _PatientDetails extends StatelessWidget {
               'have moved since.',
               style: theme.textTheme.bodySmall?.copyWith(color: mutedColor),
             ),
+            const SizedBox(height: 8),
+            // For both roles: the history is read-only (#24).
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.history),
+                label: const Text('Movement history'),
+                onPressed: () =>
+                    context.push('/patients/${patient.patientId}/history'),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
