@@ -12,6 +12,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
+          # Pinned so a new stable release cannot fail CI overnight. 3.50
+          # deprecates package:flutter/material.dart, and our lints fail on
+          # "info" findings. Raise this together with everyone's local Flutter.
+          flutter-version: 3.47.9
           channel: stable
           cache: true
       # firebase_options.dart is gitignored (#4); use the fake placeholder.
