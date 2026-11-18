@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:patient_tracker/data/models/history_entry.dart';
 import 'package:patient_tracker/data/models/location.dart';
 import 'package:patient_tracker/data/models/patient.dart';
 import 'package:patient_tracker/data/repositories/patient_repository.dart';
@@ -32,6 +33,24 @@ Patient testPatient({
     version: 1,
   );
 }
+
+/// A synthetic history entry for tests.
+HistoryEntry testHistoryEntry({
+  String eventId = 'event-1',
+  String patientId = 'HPT-TEST01',
+  String from = 'er',
+  String to = 'ward-a',
+  DateTime? at,
+  String byName = 'Test Nurse',
+}) => HistoryEntry(
+  eventId: eventId,
+  patientId: patientId,
+  fromLocation: from,
+  toLocation: to,
+  timestamp: at ?? DateTime.now(),
+  updatedBy: 'nurse-1',
+  updatedByName: byName,
+);
 
 /// In-memory [PatientRepository] for tests.
 class FakePatientRepository implements PatientRepository {
@@ -74,6 +93,23 @@ class FakePatientRepository implements PatientRepository {
   Stream<List<Location>> watchLocations() async* {
     await gate?.future;
     yield locations;
+  }
+
+  /// Transfers per patient, newest first.
+  final history = <String, List<HistoryEntry>>{};
+  final _historyChanges = StreamController<void>.broadcast();
+
+  /// When true, subscribing to [watchHistory] fails.
+  bool failHistoryOnListen = false;
+
+  @override
+  Stream<List<HistoryEntry>> watchHistory(String patientId) async* {
+    await gate?.future;
+    if (failHistoryOnListen) throw Exception('history unavailable');
+    yield history[patientId] ?? const [];
+    await for (final _ in _historyChanges.stream) {
+      yield history[patientId] ?? const [];
+    }
   }
 
   final changeStatusCalls = <({String patientId, PatientStatus status})>[];
@@ -119,11 +155,22 @@ class FakePatientRepository implements PatientRepository {
     ));
     await writeGate?.future;
     if (writeError case final error?) throw error;
+    final at = DateTime.now();
+    final from = patients.firstWhere((p) => p.patientId == patientId);
+    history[patientId] = [
+      testHistoryEntry(
+        eventId: eventId,
+        patientId: patientId,
+        from: from.currentLocation,
+        to: toLocation,
+        at: at,
+      ),
+      ...?history[patientId],
+    ];
     update([
       for (final p in patients)
-        p.patientId == patientId
-            ? p.withTransfer(toLocation, at: DateTime.now())
-            : p,
+        p.patientId == patientId ? p.withTransfer(toLocation, at: at) : p,
     ]);
+    _historyChanges.add(null);
   }
 }

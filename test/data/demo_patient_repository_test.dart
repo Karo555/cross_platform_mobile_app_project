@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:patient_tracker/data/models/app_user.dart';
 import 'package:patient_tracker/data/models/patient.dart';
 import 'package:patient_tracker/data/repositories/demo_patient_repository.dart';
 import 'package:patient_tracker/data/repositories/patient_repository.dart';
@@ -164,6 +165,95 @@ void main() {
         ),
         throwsStateError,
       );
+    });
+  });
+
+  group('watchHistory', () {
+    test('the demo history ends where each patient is now', () async {
+      final repository = DemoPatientRepository();
+      for (final patient in await repository.watchPatients().first) {
+        final history = await repository.watchHistory(patient.patientId).first;
+        if (patient.currentLocation == 'er') {
+          expect(history, isEmpty, reason: patient.patientId);
+        } else {
+          expect(history.first.toLocation, patient.currentLocation);
+        }
+      }
+    });
+
+    test(
+      'a transfer adds an entry at the top, by the signed-in user',
+      () async {
+        const user = AppUser(
+          uid: 'nurse-7',
+          email: 'nurse7@example.com',
+          role: UserRole.nurse,
+        );
+        final repository = DemoPatientRepository(
+          writeDelay: Duration.zero,
+          currentUser: () => user,
+        );
+        final patient = (await repository.watchPatients().first).firstWhere(
+          (p) => p.currentLocation == 'ward-a',
+        );
+        final entries = repository
+            .watchHistory(patient.patientId)
+            .take(2)
+            .toList();
+        await Future<void>.delayed(Duration.zero); // let the listener start
+
+        await repository.transferPatient(
+          patientId: patient.patientId,
+          toLocation: 'radiology',
+          eventId: 'event-1',
+          expectedVersion: patient.version,
+        );
+
+        final newest = (await entries).last.first;
+        expect(newest.eventId, 'event-1');
+        expect(newest.patientId, patient.patientId);
+        expect(newest.fromLocation, 'ward-a');
+        expect(newest.toLocation, 'radiology');
+        expect(newest.updatedBy, 'nurse-7');
+        expect(newest.updatedByName, 'nurse7@example.com');
+      },
+    );
+
+    test('a retry with the same event ID adds no second entry', () async {
+      final repository = DemoPatientRepository(writeDelay: Duration.zero);
+      final patient = (await repository.watchPatients().first).first;
+      Future<void> transfer() => repository.transferPatient(
+        patientId: patient.patientId,
+        toLocation: 'laboratory',
+        eventId: 'event-1',
+        expectedVersion: patient.version,
+      );
+      final before = await repository.watchHistory(patient.patientId).first;
+
+      await transfer();
+      await transfer();
+
+      final after = await repository.watchHistory(patient.patientId).first;
+      expect(after, hasLength(before.length + 1));
+    });
+
+    test('a conflict adds no entry', () async {
+      final repository = DemoPatientRepository(writeDelay: Duration.zero);
+      final patient = (await repository.watchPatients().first).first;
+      final before = await repository.watchHistory(patient.patientId).first;
+
+      await expectLater(
+        repository.transferPatient(
+          patientId: patient.patientId,
+          toLocation: 'laboratory',
+          eventId: 'event-1',
+          expectedVersion: patient.version + 5,
+        ),
+        throwsA(isA<TransferConflict>()),
+      );
+
+      final after = await repository.watchHistory(patient.patientId).first;
+      expect(after, hasLength(before.length));
     });
   });
 }
