@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../models/location.dart';
 import '../models/patient.dart';
 import 'patient_repository.dart';
@@ -5,12 +7,26 @@ import 'patient_repository.dart';
 /// Synthetic patients and locations, so the screens can be built and tried
 /// before the Firestore implementation exists. Contains no real data.
 ///
+/// Changes are kept in memory until the app restarts, and every open screen
+/// sees them, like with a Firestore listener.
+///
 /// The `patientId` values are placeholders until the format is defined (#8).
 /// Delete this class once [patientRepositoryProvider] uses Firestore.
 class DemoPatientRepository implements PatientRepository {
-  DemoPatientRepository({DateTime? now}) : _now = now ?? DateTime.now();
+  DemoPatientRepository({
+    DateTime? now,
+    this.writeDelay = const Duration(milliseconds: 600),
+  }) : _now = now ?? DateTime.now() {
+    _current = _initialPatients();
+  }
 
   final DateTime _now;
+
+  /// How long a write takes, so the in-flight state can be seen and tried.
+  final Duration writeDelay;
+
+  late List<Patient> _current;
+  final _changes = StreamController<List<Patient>>.broadcast();
 
   static const _locations = [
     Location(id: 'er', name: 'Emergency'),
@@ -21,17 +37,32 @@ class DemoPatientRepository implements PatientRepository {
   ];
 
   @override
-  Stream<List<Patient>> watchPatients() => Stream.value(_patients());
+  Stream<List<Patient>> watchPatients() async* {
+    yield _current;
+    yield* _changes.stream;
+  }
 
   @override
-  Stream<Patient?> watchPatient(String patientId) => Stream.value(
-    _patients().where((p) => p.patientId == patientId).firstOrNull,
+  Stream<Patient?> watchPatient(String patientId) => watchPatients().map(
+    (list) => list.where((p) => p.patientId == patientId).firstOrNull,
   );
 
   @override
   Stream<List<Location>> watchLocations() => Stream.value(_locations);
 
-  List<Patient> _patients() {
+  @override
+  Future<void> changeStatus(String patientId, PatientStatus status) async {
+    await Future<void>.delayed(writeDelay);
+    final index = _current.indexWhere((p) => p.patientId == patientId);
+    if (index == -1) throw StateError('No patient with ID $patientId');
+
+    final updated = List.of(_current);
+    updated[index] = _current[index].withStatus(status, at: DateTime.now());
+    _current = List.unmodifiable(updated);
+    _changes.add(_current);
+  }
+
+  List<Patient> _initialPatients() {
     Patient patient(
       int number, {
       required int age,

@@ -56,4 +56,21 @@ class Patient {
 
   /// Goes up by 1 on every transfer and status change (#35).
   final int version;
+
+  /// This patient after a status change made [at] that time, as listed in
+  /// `docs/schema.md`: the location and [locationUpdatedAt] stay the same.
+  /// For in-memory repositories; Firestore applies the same rules itself.
+  Patient withStatus(PatientStatus newStatus, {required DateTime at}) =>
+      Patient(
+        patientId: patientId,
+        name: name,
+        age: age,
+        condition: condition,
+        admissionDate: admissionDate,
+        currentLocation: currentLocation,
+        status: newStatus,
+        lastUpdated: at,
+        locationUpdatedAt: locationUpdatedAt,
+        version: version + 1,
+      );
 }

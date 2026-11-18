@@ -16,6 +16,15 @@ abstract interface class PatientRepository {
 
   /// The places a patient can be in. Read-only for the app.
   Stream<List<Location>> watchLocations();
+
+  /// Sets the patient's status (doctors only, #19). Changes `status`,
+  /// `lastUpdated` and `version`; the location and `locationUpdatedAt` stay
+  /// as they are, also for [PatientStatus.discharged].
+  ///
+  /// Completes only once the backend has accepted the write, and throws if it
+  /// did not. It must not queue the write for later, so the Firestore
+  /// version uses a transaction, which fails instead of waiting offline.
+  Future<void> changeStatus(String patientId, PatientStatus status);
 }
 
 /// Replace [DemoPatientRepository] with the Firestore implementation once it
