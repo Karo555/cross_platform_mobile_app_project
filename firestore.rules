@@ -1,12 +1,39 @@
 rules_version = '2';
 
-// Starting point from #4: every read and write is rejected.
-// The real rules (unauthenticated access, the role matrix, validation)
-// are added in #12, #17 and #18, each with tests in #20.
+// Security rules (#12). Collections and fields: docs/schema.md.
+//
+// #12: only signed-in staff can read, and no client can write anything yet.
+// Writes come later: the role matrix (#17), validation (#18), atomic
+// transfers (#22) and immutable history (#23), each with tests (#20).
+//
+// Anything not matched below is denied, because Firestore denies by default.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    // Staff = signed in AND the ID token carries a known role. The role is the
+    // `role` custom claim, set only by the trusted seed script (#10). Any other
+    // value (missing, 'admin', 'Nurse', ...) counts as no role.
+    function isStaff() {
+      return request.auth != null
+          && request.auth.token.role in ['nurse', 'doctor'];
+    }
+
+    match /patients/{patientId} {
+      allow read: if isStaff();
+
+      match /history/{eventId} {
+        allow read: if isStaff();
+      }
+    }
+
+    match /locations/{locationId} {
+      allow read: if isStaff();
+    }
+
+    // Each user may read only their own profile. Nobody may write it, so no
+    // client can set or change a role (also not their own).
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
     }
   }
 }
