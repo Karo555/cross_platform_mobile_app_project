@@ -139,20 +139,6 @@ void main() {
       expect(find.text('Change status'), findsOneWidget);
       expect(find.text('Transfer patient'), findsNothing);
     });
-
-    testWidgets('until #21 exists, the button says it is not ready', (
-      tester,
-    ) async {
-      await _openDetails(
-        tester,
-        FakePatientRepository(patients: [testPatient()]),
-      );
-
-      await tester.tap(find.text('Transfer patient'));
-      await tester.pump();
-
-      expect(find.text('Transfers are not available yet.'), findsOneWidget);
-    });
   });
 
   testWidgets('an unknown ID shows "not found" and no action', (tester) async {

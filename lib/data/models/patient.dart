@@ -73,4 +73,20 @@ class Patient {
         locationUpdatedAt: locationUpdatedAt,
         version: version + 1,
       );
+
+  /// This patient after a transfer to [toLocation] made [at] that time, as
+  /// listed in `docs/schema.md`: the status stays the same.
+  /// For in-memory repositories; Firestore applies the same rules itself.
+  Patient withTransfer(String toLocation, {required DateTime at}) => Patient(
+    patientId: patientId,
+    name: name,
+    age: age,
+    condition: condition,
+    admissionDate: admissionDate,
+    currentLocation: toLocation,
+    status: status,
+    lastUpdated: at,
+    locationUpdatedAt: at,
+    version: version + 1,
+  );
 }

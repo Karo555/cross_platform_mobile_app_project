@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/connectivity.dart';
+import '../../../core/widgets/inline_notice.dart';
 import '../../../data/models/patient.dart';
 import '../../../data/repositories/patient_repository.dart';
 
@@ -133,14 +134,14 @@ class _ChangeStatusDialogState extends ConsumerState<ChangeStatusDialog> {
             ],
             if (offline) ...[
               const SizedBox(height: 12),
-              _Notice(
+              InlineNotice(
                 icon: Icons.cloud_off,
                 text: 'You are offline. Connect to change the status.',
                 color: colors.onSurfaceVariant,
               ),
             ] else if (_failed) ...[
               const SizedBox(height: 12),
-              _Notice(
+              InlineNotice(
                 icon: Icons.error_outline,
                 text: 'The status was not changed. Try again.',
                 color: colors.error,
@@ -166,43 +167,6 @@ class _ChangeStatusDialogState extends ConsumerState<ChangeStatusDialog> {
                     ),
                   )
                 : const Text('Confirm'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Notice extends StatelessWidget {
-  const _Notice({
-    required this.icon,
-    required this.text,
-    required this.color,
-    this.liveRegion = false,
-  });
-
-  final IconData icon;
-  final String text;
-  final Color color;
-
-  /// Announces the text to screen readers as soon as it appears.
-  final bool liveRegion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: liveRegion,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ExcludeSemantics(child: Icon(icon, size: 20, color: color)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: color),
-            ),
           ),
         ],
       ),
