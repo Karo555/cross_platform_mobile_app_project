@@ -89,6 +89,17 @@ firebase emulators:start
 ```
 Auth `9099`, Firestore `8080`, Functions `5001`, Emulator UI at http://localhost:4000. Rules come from `firestore.rules`.
 
+### Security-rules tests
+`firestore-tests/` checks `firestore.rules` against the Firestore emulator: each test acts as a nurse, a doctor, a user without a role, or someone not signed in, and checks that Firestore allows or rejects the request. Run them before every PR that touches the rules:
+
+```bash
+cd firestore-tests
+npm install
+npm run test:emulator
+```
+
+`test:emulator` starts the Firestore emulator, runs the tests and stops it again, so no other emulator may be using port 8080. The `PERMISSION_DENIED` lines in the output are expected: they are the rejections the tests check for.
+
 ### Point the app at the emulators
 Debug builds use the emulators automatically (`lib/data/firebase/firebase_setup.dart`). Tell the app where your PC is:
 
