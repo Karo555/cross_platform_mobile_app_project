@@ -77,12 +77,20 @@ class FakePatientRepository implements PatientRepository {
   }
 
   final changeStatusCalls = <({String patientId, PatientStatus status})>[];
+  final transferCalls =
+      <
+        ({
+          String patientId,
+          String toLocation,
+          String eventId,
+          int expectedVersion,
+        })
+      >[];
 
-  /// When set, [changeStatus] waits for this before finishing, so the write
-  /// stays in flight.
+  /// When set, writes wait for this before finishing, so they stay in flight.
   Completer<void>? writeGate;
 
-  /// When set, [changeStatus] throws this and changes nothing.
+  /// When set, writes throw this and change nothing.
   Object? writeError;
 
   @override
@@ -93,6 +101,29 @@ class FakePatientRepository implements PatientRepository {
     update([
       for (final p in patients)
         p.patientId == patientId ? p.withStatus(status, at: DateTime.now()) : p,
+    ]);
+  }
+
+  @override
+  Future<void> transferPatient({
+    required String patientId,
+    required String toLocation,
+    required String eventId,
+    required int expectedVersion,
+  }) async {
+    transferCalls.add((
+      patientId: patientId,
+      toLocation: toLocation,
+      eventId: eventId,
+      expectedVersion: expectedVersion,
+    ));
+    await writeGate?.future;
+    if (writeError case final error?) throw error;
+    update([
+      for (final p in patients)
+        p.patientId == patientId
+            ? p.withTransfer(toLocation, at: DateTime.now())
+            : p,
     ]);
   }
 }
