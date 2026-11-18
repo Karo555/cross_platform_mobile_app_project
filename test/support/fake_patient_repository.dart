@@ -75,4 +75,24 @@ class FakePatientRepository implements PatientRepository {
     await gate?.future;
     yield locations;
   }
+
+  final changeStatusCalls = <({String patientId, PatientStatus status})>[];
+
+  /// When set, [changeStatus] waits for this before finishing, so the write
+  /// stays in flight.
+  Completer<void>? writeGate;
+
+  /// When set, [changeStatus] throws this and changes nothing.
+  Object? writeError;
+
+  @override
+  Future<void> changeStatus(String patientId, PatientStatus status) async {
+    changeStatusCalls.add((patientId: patientId, status: status));
+    await writeGate?.future;
+    if (writeError case final error?) throw error;
+    update([
+      for (final p in patients)
+        p.patientId == patientId ? p.withStatus(status, at: DateTime.now()) : p,
+    ]);
+  }
 }
