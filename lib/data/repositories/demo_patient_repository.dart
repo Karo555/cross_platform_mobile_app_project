@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../models/app_user.dart';
+import '../models/history_entry.dart';
 import '../models/location.dart';
 import '../models/patient.dart';
 import 'patient_repository.dart';
@@ -16,11 +18,17 @@ class DemoPatientRepository implements PatientRepository {
   DemoPatientRepository({
     DateTime? now,
     this.writeDelay = const Duration(milliseconds: 600),
-  }) : _now = now ?? DateTime.now() {
+    AppUser? Function()? currentUser,
+  }) : _now = now ?? DateTime.now(),
+       _currentUser = currentUser ?? (() => null) {
     _current = _initialPatients();
+    _history = _initialHistory(_current);
   }
 
   final DateTime _now;
+
+  /// Who is signed in, recorded as the actor of a transfer.
+  final AppUser? Function() _currentUser;
 
   /// How long a write takes, so the in-flight state can be seen and tried.
   final Duration writeDelay;
@@ -28,8 +36,10 @@ class DemoPatientRepository implements PatientRepository {
   late List<Patient> _current;
   final _changes = StreamController<List<Patient>>.broadcast();
 
-  /// Transfers already applied, so a retry with the same ID changes nothing.
-  final _transferEventIds = <String>{};
+  /// Every transfer, oldest first. Also tells whether an `eventId` was
+  /// already applied, so a retry with the same ID changes nothing.
+  late List<HistoryEntry> _history;
+  final _historyChanges = StreamController<void>.broadcast();
 
   static const _locations = [
     Location(id: 'er', name: 'Emergency'),
@@ -52,6 +62,17 @@ class DemoPatientRepository implements PatientRepository {
 
   @override
   Stream<List<Location>> watchLocations() => Stream.value(_locations);
+
+  @override
+  Stream<List<HistoryEntry>> watchHistory(String patientId) async* {
+    List<HistoryEntry> forPatient() => List.unmodifiable(
+      _history.reversed.where((e) => e.patientId == patientId),
+    );
+    yield forPatient();
+    await for (final _ in _historyChanges.stream) {
+      yield forPatient();
+    }
+  }
 
   @override
   Future<void> changeStatus(String patientId, PatientStatus status) async {
@@ -77,12 +98,28 @@ class DemoPatientRepository implements PatientRepository {
     }
 
     // Same order as the Firestore version (docs/schema.md).
-    if (_transferEventIds.contains(eventId)) return;
+    if (_history.any((e) => e.eventId == eventId)) return;
     final patient = _current[index];
     if (patient.version != expectedVersion) throw const TransferConflict();
 
-    _transferEventIds.add(eventId);
-    _replace(index, patient.withTransfer(toLocation, at: DateTime.now()));
+    final user = _currentUser();
+    final at = DateTime.now();
+    _history = List.unmodifiable([
+      ..._history,
+      HistoryEntry(
+        eventId: eventId,
+        patientId: patientId,
+        fromLocation: patient.currentLocation,
+        toLocation: toLocation,
+        timestamp: at,
+        updatedBy: user?.uid ?? 'demo-nurse',
+        // AppUser has no display name yet; Firestore copies `displayName`
+        // from `users/{uid}`.
+        updatedByName: user?.email ?? 'Test Nurse',
+      ),
+    ]);
+    _replace(index, patient.withTransfer(toLocation, at: at));
+    _historyChanges.add(null);
   }
 
   void _replace(int index, Patient patient) {
@@ -91,6 +128,24 @@ class DemoPatientRepository implements PatientRepository {
     _current = List.unmodifiable(updated);
     _changes.add(_current);
   }
+
+  /// One earlier move out of the ER for every patient who is somewhere else
+  /// now, so the history screen has something to show. Patients still in
+  /// the ER have no history, which shows the empty state.
+  static List<HistoryEntry> _initialHistory(List<Patient> patients) =>
+      List.unmodifiable([
+        for (final p in patients)
+          if (p.currentLocation != 'er')
+            HistoryEntry(
+              eventId: 'demo-${p.patientId}',
+              patientId: p.patientId,
+              fromLocation: 'er',
+              toLocation: p.currentLocation,
+              timestamp: p.locationUpdatedAt,
+              updatedBy: 'demo-nurse',
+              updatedByName: 'Test Nurse',
+            ),
+      ]);
 
   List<Patient> _initialPatients() {
     Patient patient(
