@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Short text for when something was recorded, in the device's 12- or
 /// 24-hour format:

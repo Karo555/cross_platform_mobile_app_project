@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A short message with an icon inside a dialog or form, for example "You
 /// are offline" or why a save failed. Used by the confirmation dialogs.
