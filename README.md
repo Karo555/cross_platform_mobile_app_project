@@ -100,3 +100,34 @@ Debug builds use the emulators automatically (`lib/data/firebase/firebase_setup.
 | iOS simulator | `flutter run --dart-define=EMULATOR_HOST=localhost` |
 
 Add `--dart-define=USE_EMULATOR=false` to use the real Firebase project from a debug build.
+
+## Test data: seed script (#10)
+
+`tools/seed.py` fills the emulators with **synthetic** data: 7 locations, 15 patients (`HPT-000001` to `HPT-000015`) and 5 test accounts. It is the only place where roles are assigned (as the `role` custom claim on the account).
+
+One-time setup (Python 3.10+):
+
+```bash
+python -m venv tools/.venv
+tools/.venv/Scripts/activate        # Windows; macOS: source tools/.venv/bin/activate
+pip install -r tools/requirements.txt
+```
+
+With the emulators running (`firebase emulators:start`):
+
+```bash
+python tools/seed.py            # safe to run again: nothing is duplicated
+python tools/seed.py --reset    # also put every patient back to its seed values
+```
+
+Test accounts (emulator only, password `test1234`):
+
+| Email | Role |
+|---|---|
+| `nurse1@test.local`, `nurse2@test.local` | nurse |
+| `doctor1@test.local`, `doctor2@test.local` | doctor |
+| `norole1@test.local` | none (should see "No access") |
+
+The emulator forgets everything when it stops, so run the script again after each restart.
+
+`--cloud` seeds the real project. Only Akash runs it: it needs a service account key in `GOOGLE_APPLICATION_CREDENTIALS` (never commit the key file), a `SEED_PASSWORD` of at least 12 characters, and you type the project ID to confirm.
