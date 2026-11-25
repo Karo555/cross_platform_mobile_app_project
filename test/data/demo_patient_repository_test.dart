@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:patient_tracker/data/models/patient.dart';
 import 'package:patient_tracker/data/repositories/demo_patient_repository.dart';
 
 void main() {
@@ -27,5 +28,61 @@ void main() {
         .map((p) => p.name)
         .toList();
     expect(names, [...names]..sort());
+  });
+
+  group('changeStatus', () {
+    test('changes only status, lastUpdated and version', () async {
+      final repository = DemoPatientRepository(writeDelay: Duration.zero);
+      final before = (await repository.watchPatients().first).first;
+      final newStatus = PatientStatus.values.firstWhere(
+        (s) => s != before.status,
+      );
+
+      await repository.changeStatus(before.patientId, newStatus);
+      final after = await repository.watchPatient(before.patientId).first;
+
+      expect(after!.status, newStatus);
+      expect(after.version, before.version + 1);
+      expect(after.lastUpdated.isAfter(before.lastUpdated), isTrue);
+      expect(after.currentLocation, before.currentLocation);
+      expect(after.locationUpdatedAt, before.locationUpdatedAt);
+      expect(after.name, before.name);
+    });
+
+    test('discharging keeps the location', () async {
+      final repository = DemoPatientRepository(writeDelay: Duration.zero);
+      final before = (await repository.watchPatients().first).firstWhere(
+        (p) => p.status != PatientStatus.discharged,
+      );
+
+      await repository.changeStatus(before.patientId, PatientStatus.discharged);
+      final after = await repository.watchPatient(before.patientId).first;
+
+      expect(after!.status, PatientStatus.discharged);
+      expect(after.currentLocation, before.currentLocation);
+    });
+
+    test('open listeners see the change', () async {
+      final repository = DemoPatientRepository(writeDelay: Duration.zero);
+      final id = (await repository.watchPatients().first).first.patientId;
+      final statuses = repository
+          .watchPatient(id)
+          .map((p) => p!.status)
+          .take(2)
+          .toList();
+      await Future<void>.delayed(Duration.zero); // let the listener start
+
+      await repository.changeStatus(id, PatientStatus.discharged);
+
+      expect((await statuses).last, PatientStatus.discharged);
+    });
+
+    test('an unknown patient throws', () {
+      final repository = DemoPatientRepository(writeDelay: Duration.zero);
+      expect(
+        repository.changeStatus('HPT-NOPE', PatientStatus.admitted),
+        throwsStateError,
+      );
+    });
   });
 }

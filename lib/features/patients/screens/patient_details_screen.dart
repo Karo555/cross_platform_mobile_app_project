@@ -9,6 +9,7 @@ import '../../../data/models/patient.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/patient_repository.dart';
 import '../providers.dart';
+import '../widgets/change_status_dialog.dart';
 import '../widgets/status_badge.dart';
 
 /// One patient: status, last recorded location and admission details, with
@@ -26,14 +27,24 @@ class PatientDetailsScreen extends ConsumerWidget {
     final role = ref.watch(authStateProvider).value?.role;
 
     final loaded = patient.value;
+    final locationList = locations.value;
     return Scaffold(
       appBar: AppBar(title: Text(loaded?.name ?? 'Patient')),
       body: SafeArea(
         child: _buildBody(ref, patient: patient, locations: locations),
       ),
-      bottomNavigationBar: loaded == null || role == null
+      bottomNavigationBar:
+          loaded == null ||
+              locationList == null ||
+              role == null ||
+              patient.hasError ||
+              locations.hasError
           ? null
-          : _ActionBar(role: role),
+          : _ActionBar(
+              role: role,
+              patient: loaded,
+              locationName: _locationName(loaded, locationList),
+            ),
     );
   }
 
@@ -68,16 +79,17 @@ class PatientDetailsScreen extends ConsumerWidget {
       );
     }
 
-    final locationName =
-        locationList
-            .where((l) => l.id == loaded.currentLocation)
-            .firstOrNull
-            ?.name ??
-        // The ID is better than nothing if a location is missing.
-        loaded.currentLocation;
-    return _PatientDetails(patient: loaded, locationName: locationName);
+    return _PatientDetails(
+      patient: loaded,
+      locationName: _locationName(loaded, locationList),
+    );
   }
 }
+
+String _locationName(Patient patient, List<Location> locations) =>
+    locations.where((l) => l.id == patient.currentLocation).firstOrNull?.name ??
+    // The ID is better than nothing if a location is missing.
+    patient.currentLocation;
 
 class _PatientDetails extends StatelessWidget {
   const _PatientDetails({required this.patient, required this.locationName});
@@ -224,23 +236,46 @@ class _InfoRow extends StatelessWidget {
 /// it: nurses transfer, doctors change the status. The rules enforce the
 /// same split (#17); hiding the button is only for clarity.
 class _ActionBar extends StatelessWidget {
-  const _ActionBar({required this.role});
+  const _ActionBar({
+    required this.role,
+    required this.patient,
+    required this.locationName,
+  });
 
   final UserRole role;
+  final Patient patient;
+  final String locationName;
+
+  void _transfer(BuildContext context) {
+    // Temporary until the transfer flow (#21) exists.
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('Transfers are not available yet.')),
+      );
+  }
+
+  Future<void> _changeStatus(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final newStatus = await showChangeStatusDialog(
+      context,
+      patient: patient,
+      locationName: locationName,
+    );
+    if (newStatus == null) return;
+    // Only reached after the backend accepted the change (#19).
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text('Status changed to ${newStatus.value}.')),
+      );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final (label, icon, notReadyMessage) = switch (role) {
-      UserRole.nurse => (
-        'Transfer patient',
-        Icons.swap_horiz,
-        'Transfers are not available yet.',
-      ),
-      UserRole.doctor => (
-        'Change status',
-        Icons.edit_note,
-        'Changing the status is not available yet.',
-      ),
+    final (label, icon, onPressed) = switch (role) {
+      UserRole.nurse => ('Transfer patient', Icons.swap_horiz, _transfer),
+      UserRole.doctor => ('Change status', Icons.edit_note, _changeStatus),
     };
 
     return SafeArea(
@@ -250,11 +285,7 @@ class _ActionBar extends StatelessWidget {
           style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
           icon: Icon(icon),
           label: Text(label),
-          // Temporary until the transfer flow (#21) and the status picker
-          // (#19) exist. Replace with navigation to them.
-          onPressed: () => ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(notReadyMessage))),
+          onPressed: () => onPressed(context),
         ),
       ),
     );
