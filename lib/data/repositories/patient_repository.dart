@@ -25,6 +25,35 @@ abstract interface class PatientRepository {
   /// did not. It must not queue the write for later, so the Firestore
   /// version uses a transaction, which fails instead of waiting offline.
   Future<void> changeStatus(String patientId, PatientStatus status);
+
+  /// Moves the patient to [toLocation] (nurses only, #21). Changes
+  /// `currentLocation`, `locationUpdatedAt`, `lastUpdated` and `version`, and
+  /// adds a history entry in the same atomic write (#22).
+  ///
+  /// [eventId] identifies this one transfer: pass the same ID when retrying,
+  /// so a retry after a lost response does not move the patient twice (#34).
+  /// [expectedVersion] is the `version` the nurse saw when confirming; if the
+  /// patient has changed since, this throws [TransferConflict] and writes
+  /// nothing (#35). The checks run in the order listed in `docs/schema.md`.
+  ///
+  /// Like [changeStatus], completes only once the backend has accepted the
+  /// write, and never queues it offline.
+  Future<void> transferPatient({
+    required String patientId,
+    required String toLocation,
+    required String eventId,
+    required int expectedVersion,
+  });
+}
+
+/// Thrown by [PatientRepository.transferPatient] when the patient changed
+/// after the nurse confirmed, for example because someone else moved them
+/// first. Nothing was written.
+class TransferConflict implements Exception {
+  const TransferConflict();
+
+  @override
+  String toString() => 'TransferConflict: the patient changed meanwhile';
 }
 
 /// Replace [DemoPatientRepository] with the Firestore implementation once it

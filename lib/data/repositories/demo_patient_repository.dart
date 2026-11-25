@@ -28,6 +28,9 @@ class DemoPatientRepository implements PatientRepository {
   late List<Patient> _current;
   final _changes = StreamController<List<Patient>>.broadcast();
 
+  /// Transfers already applied, so a retry with the same ID changes nothing.
+  final _transferEventIds = <String>{};
+
   static const _locations = [
     Location(id: 'er', name: 'Emergency'),
     Location(id: 'ward-a', name: 'Ward A'),
@@ -56,8 +59,35 @@ class DemoPatientRepository implements PatientRepository {
     final index = _current.indexWhere((p) => p.patientId == patientId);
     if (index == -1) throw StateError('No patient with ID $patientId');
 
+    _replace(index, _current[index].withStatus(status, at: DateTime.now()));
+  }
+
+  @override
+  Future<void> transferPatient({
+    required String patientId,
+    required String toLocation,
+    required String eventId,
+    required int expectedVersion,
+  }) async {
+    await Future<void>.delayed(writeDelay);
+    final index = _current.indexWhere((p) => p.patientId == patientId);
+    if (index == -1) throw StateError('No patient with ID $patientId');
+    if (!_locations.any((l) => l.id == toLocation)) {
+      throw StateError('No location with ID $toLocation');
+    }
+
+    // Same order as the Firestore version (docs/schema.md).
+    if (_transferEventIds.contains(eventId)) return;
+    final patient = _current[index];
+    if (patient.version != expectedVersion) throw const TransferConflict();
+
+    _transferEventIds.add(eventId);
+    _replace(index, patient.withTransfer(toLocation, at: DateTime.now()));
+  }
+
+  void _replace(int index, Patient patient) {
     final updated = List.of(_current);
-    updated[index] = _current[index].withStatus(status, at: DateTime.now());
+    updated[index] = patient;
     _current = List.unmodifiable(updated);
     _changes.add(_current);
   }

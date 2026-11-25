@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/date_format.dart';
 import '../../../core/widgets/state_views.dart';
@@ -246,13 +247,16 @@ class _ActionBar extends StatelessWidget {
   final Patient patient;
   final String locationName;
 
-  void _transfer(BuildContext context) {
-    // Temporary until the transfer flow (#21) exists.
-    ScaffoldMessenger.of(context)
+  Future<void> _transfer(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final destination = await context.push<String>(
+      '/patients/${patient.patientId}/transfer',
+    );
+    if (destination == null) return;
+    // Only reached after the backend accepted the transfer (#21).
+    messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text('Transfers are not available yet.')),
-      );
+      ..showSnackBar(SnackBar(content: Text('Moved to $destination.')));
   }
 
   Future<void> _changeStatus(BuildContext context) async {

@@ -11,6 +11,7 @@ import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/no_access_screen.dart';
 import 'features/patients/screens/patient_details_screen.dart';
 import 'features/patients/screens/patient_list_screen.dart';
+import 'features/patients/screens/transfer_screen.dart';
 
 const _homeRoute = '/';
 const _loadingRoute = '/loading';
@@ -69,6 +70,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/patients/:patientId',
         builder: (context, state) =>
             PatientDetailsScreen(patientId: state.pathParameters['patientId']!),
+        routes: [
+          GoRoute(
+            path: 'transfer',
+            builder: (context, state) =>
+                TransferScreen(patientId: state.pathParameters['patientId']!),
+          ),
+        ],
       ),
       GoRoute(
         path: _loadingRoute,
