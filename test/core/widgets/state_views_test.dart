@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:patient_tracker/core/widgets/state_views.dart';
 
 Widget _host(Widget child) => MaterialApp(home: Scaffold(body: child));
