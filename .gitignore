@@ -74,3 +74,9 @@ lib/firebase_options.dart
 /android/app/google-services.json
 /ios/Runner/GoogleService-Info.plist
 /firebase.json.bak
+
+# Seed script (#10): Python virtual env and service account keys (secret).
+/tools/.venv/
+/tools/*.json
+*-firebase-adminsdk-*.json
+__pycache__/
