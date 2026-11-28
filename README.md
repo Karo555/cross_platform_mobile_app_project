@@ -78,8 +78,10 @@ On Windows, if PowerShell says running scripts is disabled, use `firebase.cmd` i
 `lib/firebase_options.dart`, `android/app/google-services.json` and `ios/Runner/GoogleService-Info.plist` are gitignored. Generate them once:
 
 ```bash
-flutterfire configure --project=patient-tracker-cpma --platforms=android,ios --android-package-name=com.cpma.patient_tracker --ios-bundle-id=com.cpma.patientTracker --yes
+flutterfire configure --project=patient-tracker-cpma --platforms=android,ios,web --android-package-name=com.cpma.patient_tracker --ios-bundle-id=com.cpma.patientTracker --yes
 ```
+
+If your copy of `lib/firebase_options.dart` was generated before web support was added (#68), run the command again. Otherwise the app throws `UnsupportedError` in the browser.
 
 The iOS plist is only written on a Mac. CI uses the fake `lib/firebase_options.example.dart` instead (see `.github/workflows/ci.yml`).
 
@@ -109,5 +111,6 @@ Debug builds use the emulators automatically (`lib/data/firebase/firebase_setup.
 | Android phone over USB | `adb reverse tcp:9099 tcp:9099` and `adb reverse tcp:8080 tcp:8080`, then `flutter run --dart-define=EMULATOR_HOST=localhost` |
 | Phone over Wi-Fi | `flutter run --dart-define=EMULATOR_HOST=<your PC's IP>` (firewall must allow ports 8080/9099) |
 | iOS simulator | `flutter run --dart-define=EMULATOR_HOST=localhost` |
+| Web (Chrome) | `flutter run -d chrome --dart-define=EMULATOR_HOST=localhost`. The flag is required, because the browser cannot reach `10.0.2.2`. Without Chrome, use `-d web-server --web-port 8000` and open http://localhost:8000 in any browser |
 
 Add `--dart-define=USE_EMULATOR=false` to use the real Firebase project from a debug build.
