@@ -1,4 +1,7 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
+
+import 'widgets/today.dart';
 
 /// Short text for when something was recorded, in the device's 12- or
 /// 24-hour format:
@@ -10,7 +13,8 @@ import 'package:flutter/material.dart';
 /// The time is absolute on purpose. A relative time such as "5 min ago" would
 /// be wrong a few minutes later unless the screen kept rebuilding.
 ///
-/// [now] is only for tests.
+/// "Today" comes from the [Today] widget above [context], so the text is
+/// rebuilt when the date changes. [now] is only for tests.
 String formatRecordedTime(
   BuildContext context,
   DateTime time, {
@@ -23,7 +27,8 @@ String formatRecordedTime(
     alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
   );
 
-  final daysAgo = _calendarDay((now ?? DateTime.now()).toLocal())
+  final today = now ?? Today.maybeOf(context) ?? clock.now();
+  final daysAgo = _calendarDay(today.toLocal())
       .difference(_calendarDay(local))
       .inDays;
   // A time slightly in the future (clock differences) also counts as today.
