@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/history_entry.dart';
@@ -5,6 +6,7 @@ import '../models/location.dart';
 import '../models/patient.dart';
 import 'auth_repository.dart';
 import 'demo_patient_repository.dart';
+import 'firestore_patient_repository.dart';
 
 /// Reads patients and locations. Screens use this instead of `cloud_firestore`.
 abstract interface class PatientRepository {
@@ -62,14 +64,24 @@ class TransferConflict implements Exception {
   String toString() => 'TransferConflict: the patient changed meanwhile';
 }
 
-/// Replace [DemoPatientRepository] with the Firestore implementation once it
-/// exists. Tests override this provider.
+/// Set `--dart-define=USE_FIRESTORE_DATA=true` to read patients from
+/// Firestore (the emulator in debug builds) instead of the demo data.
+///
+/// Off by default until the security rules (#12) let staff read and the
+/// seed script (#10) fills the emulator. Transfers on Firestore come with
+/// #22. Once all three are in, make Firestore the only option and delete
+/// [DemoPatientRepository].
+const _useFirestoreData = bool.fromEnvironment('USE_FIRESTORE_DATA');
+
+/// Tests override this provider.
 final patientRepositoryProvider = Provider<PatientRepository>(
-  (ref) => DemoPatientRepository(
-    // Who made a transfer, for the history. Firestore takes it from the
-    // signed-in user's token instead.
-    currentUser: () => ref.read(authStateProvider).value,
-  ),
+  (ref) => _useFirestoreData
+      ? FirestorePatientRepository(FirebaseFirestore.instance)
+      : DemoPatientRepository(
+          // Who made a transfer, for the history. Firestore takes it from
+          // the signed-in user's token instead.
+          currentUser: () => ref.read(authStateProvider).value,
+        ),
 );
 
 /// All locations, for any screen that shows a location name or lets the user

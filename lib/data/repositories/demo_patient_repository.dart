@@ -7,13 +7,13 @@ import '../models/patient.dart';
 import 'patient_repository.dart';
 
 /// Synthetic patients and locations, so the screens can be built and tried
-/// before the Firestore implementation exists. Contains no real data.
+/// until Firestore has rules and seed data. Contains no real data.
 ///
 /// Changes are kept in memory until the app restarts, and every open screen
 /// sees them, like with a Firestore listener.
 ///
 /// The `patientId` values are placeholders until the format is defined (#8).
-/// Delete this class once [patientRepositoryProvider] uses Firestore.
+/// Delete this class once [patientRepositoryProvider] always uses Firestore.
 class DemoPatientRepository implements PatientRepository {
   DemoPatientRepository({
     DateTime? now,
