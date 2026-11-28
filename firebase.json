@@ -39,7 +39,8 @@
           "projectId": "patient-tracker-cpma",
           "configurations": {
             "android": "1:545170420543:android:5295190d9e682ab191998a",
-            "ios": "1:545170420543:ios:29fbc8dee7abe6d291998a"
+            "ios": "1:545170420543:ios:29fbc8dee7abe6d291998a",
+            "web": "1:545170420543:web:558562b276dd9e4291998a"
           }
         }
       },

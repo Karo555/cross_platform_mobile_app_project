@@ -14,6 +14,7 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+    - web/**
   language:
     # Firestore returns Map<String, dynamic>. These force explicit casts and
     # type arguments, so a wrong field type is caught when the code is written.
