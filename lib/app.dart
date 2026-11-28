@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'core/theme.dart';
 import 'core/widgets/offline_banner.dart';
 import 'core/widgets/state_views.dart';
+import 'core/widgets/today.dart';
 import 'data/models/app_user.dart';
 import 'data/repositories/auth_repository.dart';
 import 'features/auth/screens/login_screen.dart';
@@ -114,7 +115,7 @@ class PatientTrackerApp extends ConsumerWidget {
       darkTheme: buildAppTheme(Brightness.dark),
       routerConfig: ref.watch(routerProvider),
       builder: (context, child) =>
-          OfflineBanner(child: child ?? const SizedBox.shrink()),
+          Today(child: OfflineBanner(child: child ?? const SizedBox.shrink())),
     );
   }
 }

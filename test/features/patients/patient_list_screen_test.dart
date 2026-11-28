@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -74,6 +76,26 @@ void main() {
 
     expect(find.textContaining('Last recorded: Ward A'), findsNothing);
     expect(find.textContaining('Last recorded: Radiology'), findsOneWidget);
+  });
+
+  testWidgets('a list left open past midnight says "Yesterday"', (
+    tester,
+  ) async {
+    await _pumpApp(
+      tester,
+      FakePatientRepository(
+        patients: [testPatient(locationUpdatedAt: clock.now())],
+      ),
+    );
+    expect(find.textContaining('Yesterday'), findsNothing);
+
+    final now = clock.now();
+    await tester.pump(
+      DateTime(now.year, now.month, now.day + 1).difference(now) +
+          const Duration(seconds: 1),
+    );
+
+    expect(find.textContaining('Last recorded: Ward A · Yesterday'), findsOne);
   });
 
   testWidgets('shows the location ID if the location is unknown', (
